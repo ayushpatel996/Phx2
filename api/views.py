@@ -5,6 +5,7 @@ from .models import Room
 
 from rest_framework.views import APIView  #generic api view 
 from rest_framework.response import Response #make custom response
+from django.http import JsonResponse
 # Create your views here.
 
 class RoomView(generics.ListAPIView):   #This will allow to view a room and create a new room (and show it in webapp)
@@ -78,3 +79,14 @@ class CreateRoomView(APIView):
                 self.request.session['room_code'] = room.code 
                 return Response(RoomSerializer(room).data, status=status.HTTP_201_CREATED)
         return Response({'Bad Request': 'Invalid data...'}, status=status.HTTP_400_BAD_REQUEST)
+
+class UserInRoom(APIView):
+    def get(self,request, format=None):
+        if not self.request.session.exists(self.request.session.session_key):
+            self.request.session.create()
+        
+        data = {
+            'code' : self.request.session.get('room_code')
+        }
+
+        return JsonResponse(data, status=status.HTTP_200_OK)
