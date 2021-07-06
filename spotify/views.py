@@ -4,10 +4,11 @@ from rest_framework.views import APIView
 from requests import Request, post
 from rest_framework import status
 from rest_framework.response import Response
-from .util import update_or_create_user_tokens, is_spotify_authenticated
+from .util import update_or_create_user_tokens, is_spotify_authenticated, get_user_tokens
+from api.models import Room
+
 
 class AuthURL(APIView):
-    #This will authenticate application and request access
     def get(self, request, format=None):
         scopes = 'user-read-playback-state user-modify-playback-state user-read-currently-playing'
 
