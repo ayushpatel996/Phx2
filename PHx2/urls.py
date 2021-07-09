@@ -19,11 +19,6 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-<<<<<<< HEAD
-    path('', include( 'frontend.urls' )),
-    path('spotify/', include( 'spotify.urls' ))
-=======
     path('', include('frontend.urls')),
     path('spotify/', include('spotify.urls'))
->>>>>>> 057657351c0497bbc1c121e5818e1a841cdcb6a1
 ]

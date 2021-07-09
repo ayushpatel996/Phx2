@@ -14,11 +14,10 @@ def get_user_tokens(session_id):
         return user_tokens[0]
     else:
         return None
-
 #saves the token
 def update_or_create_user_tokens(session_id, access_token, token_type, expires_in, refresh_token):
     tokens = get_user_tokens(session_id)
-    expires_in = timezone.now() + timedelta(seconds=expires_in) #3600 #3600 seconds = 1 hour storing timestamp pf 1 hours later tha ncurrent time so to know when the sesion is going to expire
+    expires_in = timezone.now() + timedelta(seconds=expires_in)#3600 #3600 seconds = 1 hour storing timestamp pf 1 hours later tha ncurrent time so to know when the sesion is going to expire
 
     if tokens:
         tokens.access_token = access_token
@@ -32,14 +31,18 @@ def update_or_create_user_tokens(session_id, access_token, token_type, expires_i
                               refresh_token=refresh_token, token_type=token_type, expires_in=expires_in)
         tokens.save()
 
+
 def is_spotify_authenticated(session_id):
     tokens = get_user_tokens(session_id)
     if tokens:
         expiry = tokens.expires_in
-        if expiry <= timezone.now():   #if the current time expiry has passed then refresh it 
+        if expiry <= timezone.now():#if the current time expiry has passed then refresh it
             refresh_spotify_token(session_id)
+
         return True
+
     return False
+
 
 def refresh_spotify_token(session_id):
     refresh_token = get_user_tokens(session_id).refresh_token
@@ -58,3 +61,20 @@ def refresh_spotify_token(session_id):
 
     update_or_create_user_tokens(
         session_id, access_token, token_type, expires_in, refresh_token)
+
+
+def execute_spotify_api_request(session_id, endpoint, post_=False, put_=False):
+    tokens = get_user_tokens(session_id)
+    headers = {'Content-Type': 'application/json',
+               'Authorization': "Bearer " + tokens.access_token}
+
+    if post_:
+        post(BASE_URL + endpoint, headers=headers)
+    if put_:
+        put(BASE_URL + endpoint, headers=headers)
+
+    response = get(BASE_URL + endpoint, {}, headers=headers)
+    try:
+        return response.json()
+    except:
+        return {'Error': 'Issue with request'}
