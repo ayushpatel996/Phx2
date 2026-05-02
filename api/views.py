@@ -1,10 +1,8 @@
-from django.shortcuts import render
 from rest_framework import generics, status
-from .serializers import RoomSerializer,CreateRoomSerializer,UpdateRoomSerializer
+from .serializers import RoomSerializer, CreateRoomSerializer, UpdateRoomSerializer
 from .models import Room
-
-from rest_framework.views import APIView  #generic api view 
-from rest_framework.response import Response #make custom response
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from django.http import JsonResponse
 # Create your views here.
 
@@ -19,12 +17,11 @@ class GetRoom(APIView):
 
     def get(self, request, format=None):
         code = request.GET.get(self.lookup_url_kwarg)
-        if code != None:
+        if code is not None:
             room = Room.objects.filter(code=code)
-            #if we have a room then
-            if len(room) > 0:
+            if room.exists():
                 data = RoomSerializer(room[0]).data
-                data['is_host']=self.request.session.session_key == room[0].host
+                data['is_host'] = self.request.session.session_key == room[0].host
                 return Response(data, status=status.HTTP_200_OK)
             return Response({'Room Not Found' : 'Invalid Room Code'}, status=status.HTTP_404_NOT_FOUND)
         
@@ -38,10 +35,9 @@ class JoinRoom(APIView):
             self.request.session.create()
 
         code = request.data.get(self.lookup_url_kwarg)
-        if code != None:
+        if code is not None:
             room_result = Room.objects.filter(code=code)
-            if len(room_result) > 0:
-                room = room_result[0]
+            if room_result.exists():
                 self.request.session['room_code'] = code
                 return Response({'message': 'Room Joined!'}, status=status.HTTP_200_OK)
 
@@ -91,14 +87,13 @@ class UserInRoom(APIView):
         return JsonResponse(data, status=status.HTTP_200_OK)
 
 class LeaveRoom(APIView):
-    def post(self,request, format=None):
+    def post(self, request, format=None):
         if 'room_code' in self.request.session:
-            code= self.request.session.pop('room_code')
+            self.request.session.pop('room_code')
             host_id = self.request.session.session_key
             room_results = Room.objects.filter(host=host_id)
-            if len(room_results)>0:
-                room=room_results[0]
-                room.delete()
+            if room_results.exists():
+                room_results[0].delete()
         return Response({'Message': 'Success'}, status=status.HTTP_200_OK)
 
 class UpdateRoom(APIView):

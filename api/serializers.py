@@ -1,6 +1,3 @@
-#This will convert our class data(located in models.py) to JSON format
-
-from django.db.models.base import Model
 from rest_framework import serializers
 from .models import Room
 
@@ -11,10 +8,12 @@ class RoomSerializer(serializers.ModelSerializer):
                  'votes_to_skip', 'created_at')
 
 class CreateRoomSerializer(serializers.ModelSerializer):
-    #post request sending..
+    guest_can_pause = serializers.BooleanField(required=True)
+    votes_to_skip = serializers.IntegerField(required=True, min_value=1)
+
     class Meta:
-        model= Room
-        fields=('guest_can_pause','votes_to_skip')
+        model = Room
+        fields = ('guest_can_pause', 'votes_to_skip')
 
 class UpdateRoomSerializer(serializers.ModelSerializer):
      #post request sending..

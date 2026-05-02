@@ -1,20 +1,15 @@
-import React, { Component } from "react";
-import { render } from "react-dom";
-import HomePage from "./HomePage";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import HomePage from "../pages/HomePage";
 
-export default class App extends Component {
-  constructor(props) {
-    super(props);
-  }
-
-  render() {
-    return (
-      <div class="center">
-        <HomePage />
-      </div>
-    );
-  }
+function App() {
+  return (
+    <div className="antialiased">
+      <HomePage />
+    </div>
+  );
 }
 
-const appDiv = document.getElementById("app");
-render(<App />, appDiv);
+const container = document.getElementById("app");
+const root = createRoot(container);
+root.render(<App />);

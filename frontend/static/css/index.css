@@ -1,33 +1,56 @@
-html,
-body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
+@import "tailwindcss";
+
+@theme {
+  --color-spotify-green: #1DB954;
+  --color-midnight-900: #020617;
 }
 
-#main {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  left: 0;
-  top: 0;
+@layer base {
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: var(--color-midnight-900);
+    color: white;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  
+  #app {
+    width: 100%;
+    height: 100%;
+  }
 }
 
-#app {
-  width: 100%;
-  height: 100%;
+@layer components {
+  .glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
+  }
+  
+  .btn-spotify {
+    @apply px-8 py-3 bg-spotify-green text-black font-bold rounded-full transition-all duration-300 hover:scale-105 hover:bg-[#1ed760] active:scale-95 disabled:opacity-50 disabled:hover:scale-100;
+  }
+  
+  .btn-outline {
+    @apply px-8 py-3 bg-transparent text-white border border-white/20 font-bold rounded-full transition-all duration-300 hover:bg-white/10 active:scale-95;
+  }
+
+  .input-minimal {
+    @apply w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-spotify-green/50 transition-all text-center tracking-[0.2em] text-xl;
+  }
 }
 
-.center {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
 }
-
-#gradient {
-  width: 100%;
-  height: 800px;
-  padding: 0px;
-  margin: 0px;
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
