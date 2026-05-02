@@ -1,56 +1,84 @@
-# PHx2 Application
+# PHx2 - Modern Collaborative Spotify Listening
 
-This is a web application built with a **Django** backend and a **React** (Webpack bundled) frontend. It includes a Spotify integration feature.
+PHx2 is a high-performance, minimalist web application that allows friends to sync their Spotify playback in real-time. This version is a complete modernization of the original project, featuring a premium glassmorphic UI and a robust, modern tech stack.
 
-## Prerequisites
+## ✨ Features
 
-- Python 3
-- Node.js & npm
+- **Real-time Sync**: Collaborative Spotify playback with minimal latency.
+- **Midnight Glass UI**: A stunning, responsive design built with Tailwind CSS v4.
+- **Safe Operations**: Modernized backend with strict data validation and safe ORM practices.
+- **Automated Testing**: Comprehensive unit tests for all core backend logic.
+- **CI/CD Integrated**: Automated build and test verification via GitHub Actions.
 
-## Setup & Installation
+## 🛠️ Tech Stack
 
-### Backend
+- **Backend**: Django 3.2+ (REST Framework)
+- **Frontend**: React 18, Tailwind CSS v4, MUI v6 (Icons)
+- **Navigation**: React Router v6
+- **Build System**: Webpack 5 + PostCSS
 
-1. Install the necessary Python packages (Django, Django REST Framework, requests, etc.).
-   ```bash
-   pip install django djangorestframework requests
-   ```
-2. Run database migrations if needed:
-   ```bash
-   python manage.py migrate
-   ```
+---
 
-### Frontend
+## 🚀 Setup & Installation
 
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-2. Install the node dependencies:
-   ```bash
-   npm install
-   ```
+### 1. Prerequisites
+- **Python 3.8+**
+- **Node.js 18+**
+- **Spotify Developer Account** (with Client ID and Client Secret)
 
-## Running the Application
+### 2. Backend Setup
+```bash
+# Install dependencies
+pip install -r requirements.txt
 
-You will need to run both the frontend build process and the Django development server at the same time.
+# Run migrations
+python manage.py migrate
+```
 
-### 1. Start the Frontend Webpack Server
-Navigate into the `frontend` folder and run the dev script.
-
+### 3. Frontend Setup
 ```bash
 cd frontend
-# If you are using Node.js v17+, you may need to use the legacy OpenSSL provider:
-set NODE_OPTIONS=--openssl-legacy-provider
+
+# Install dependencies
+npm install
+
+# Build the frontend (one-time or production)
+npm run build
+```
+
+---
+
+## 💻 Development Workflow
+
+To run the application locally, you need to start both the Django server and the Webpack watch process.
+
+### Terminal A: Frontend (Watch Mode)
+```bash
+cd frontend
 npm run dev
 ```
-*(This will watch your React files and bundle them automatically into Django's static folder.)*
 
-### 2. Start the Django Backend Server
-In the root directory of the project, start the Django development server:
-
+### Terminal B: Backend
 ```bash
 python manage.py runserver
 ```
 
-You can now visit `http://127.0.0.1:8000` in your web browser to view the application!
+*Note: If you encounter OpenSSL issues on Node 17+, the dev script automatically handles `--openssl-legacy-provider`.*
+
+---
+
+## 🧪 Testing
+
+We use Django's testing framework for backend verification.
+
+```bash
+# Run all tests
+python manage.py test
+```
+
+For a detailed guide on testing procedures and walkthroughs, see [TESTING.md](./TESTING.md).
+
+---
+
+## 📝 License
+This project is licensed under the MIT License.
