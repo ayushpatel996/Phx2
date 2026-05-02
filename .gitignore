@@ -1,0 +1,27 @@
+# Python/Django
+*.pyc
+*~
+__pycache__/
+myvenv/
+venv/
+env/
+.env
+db.sqlite3
+/static/
+media/
+*.log
+
+# Node/Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+dist/
+build/
+
+# OS/IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
