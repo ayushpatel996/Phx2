@@ -1,0 +1,53 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Build
+        working-directory: frontend
+        run: |
+          export NODE_OPTIONS=--openssl-legacy-provider
+          npx webpack --mode production
+
+      - name: Prepare for GitHub Pages
+        run: |
+          mkdir -p public
+          # Copy the HTML template
+          cp frontend/templates/frontend/index.html public/index.html
+          # Copy the bundled JS
+          mkdir -p public/static/frontend
+          cp frontend/static/frontend/main.js public/static/frontend/
+          # Fix static paths in index.html (Replace Django static tags with relative paths)
+          sed -i 's/{% load static %}/ /g' public/index.html
+          sed -i 's/{% static "frontend\/main.js" %}/static\/frontend\/main.js/g' public/index.html
+          # Add .nojekyll to bypass Jekyll processing
+          touch public/.nojekyll
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: public
+          branch: gh-pages
