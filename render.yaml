@@ -15,8 +15,6 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: NODE_VERSION
-        value: "18.x"
+        value: "20.x"
       - key: PYTHON_VERSION
         value: "3.11.0"
-      - key: NODE_OPTIONS
-        value: "--openssl-legacy-provider"
