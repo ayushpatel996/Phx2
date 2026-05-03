@@ -63,7 +63,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install Node dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Build frontend bundle
         run: npx webpack --mode production
