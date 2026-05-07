@@ -18,7 +18,7 @@ from .models import Vote
 
 class AuthURL(APIView):
     def get(self, request, format=None):
-        scopes = 'user-read-playback-state user-modify-playback-state user-read-currently-playing'
+        scopes = 'user-read-playback-state user-modify-playback-state user-read-currently-playing user-top-read playlist-read-private'
 
         url = Request('GET', 'https://accounts.spotify.com/authorize', params={
             'scope': scopes,
@@ -170,3 +170,52 @@ class SkipSong(APIView):
             vote.save()
 
         return Response({}, status=status.HTTP_204_NO_CONTENT)
+
+
+class TopTracks(APIView):
+    def get(self, request, format=None):
+        session_id = self.request.session.session_key
+        if not is_spotify_authenticated(session_id):
+            return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        endpoint = "top/tracks?limit=5&time_range=long_term"
+        response = execute_spotify_api_request(session_id, endpoint)
+
+        if 'items' not in response:
+            return Response({'error': 'No tracks found'}, status=status.HTTP_204_NO_CONTENT)
+
+        tracks = []
+        for item in response.get('items'):
+            artist_string = ", ".join([artist.get('name') for artist in item.get('artists')])
+            tracks.append({
+                'title': item.get('name'),
+                'artist': artist_string,
+                'image_url': item.get('album').get('images')[0].get('url'),
+                'url': item.get('external_urls').get('spotify')
+            })
+        
+        return Response(tracks, status=status.HTTP_200_OK)
+
+
+class TopPlaylists(APIView):
+    def get(self, request, format=None):
+        session_id = self.request.session.session_key
+        if not is_spotify_authenticated(session_id):
+            return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        endpoint = "playlists?limit=5"
+        response = execute_spotify_api_request(session_id, endpoint)
+
+        if 'items' not in response:
+            return Response({'error': 'No playlists found'}, status=status.HTTP_204_NO_CONTENT)
+
+        playlists = []
+        for item in response.get('items'):
+            playlists.append({
+                'name': item.get('name'),
+                'image_url': item.get('images')[0].get('url') if item.get('images') else None,
+                'tracks_count': item.get('tracks').get('total'),
+                'url': item.get('external_urls').get('spotify')
+            })
+        
+        return Response(playlists, status=status.HTTP_200_OK)
