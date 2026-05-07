@@ -7,10 +7,11 @@
 
 @layer base {
   html, body {
-    height: 100%;
+    min-height: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     background-color: var(--color-midnight-900);
     color: white;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
