@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import MusicNote from "@mui/icons-material/MusicNote";
 import People from "@mui/icons-material/People";
 import AddCircleOutlined from "@mui/icons-material/AddCircleOutlined";
-import SpotifyIcon from "@mui/icons-material/MusicNote"; // Placeholder icon for Spotify connect
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from "react-router-dom";
 import RoomJoinPage from "./RoomJoinPage";
 import CreateRoomPage from "./CreateRoomPage";
@@ -16,7 +15,6 @@ export default function HomePage() {
   const [isSpotifyAuthenticated, setIsSpotifyAuthenticated] = useState(false);
   const [topTracks, setTopTracks] = useState([]);
   const [topPlaylists, setTopPlaylists] = useState([]);
-  const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
     getUserRoom().then((data) => {
@@ -32,14 +30,12 @@ export default function HomePage() {
   }, []);
 
   const loadStats = async () => {
-    setLoadingStats(true);
     const [tracks, playlists] = await Promise.all([
       getTopTracks(),
       getTopPlaylists(),
     ]);
     if (tracks) setTopTracks(tracks);
     if (playlists) setTopPlaylists(playlists);
-    setLoadingStats(false);
   };
 
   const handleConnectSpotify = async () => {
