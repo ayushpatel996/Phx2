@@ -18,3 +18,9 @@ services:
         value: "20.x"
       - key: PYTHON_VERSION
         value: "3.11.0"
+      - key: SPOTIFY_CLIENT_ID
+        sync: false
+      - key: SPOTIFY_CLIENT_SECRET
+        sync: false
+      - key: REDIRECT_URI
+        value: "https://phx2-app.onrender.com/spotify/redirect"
