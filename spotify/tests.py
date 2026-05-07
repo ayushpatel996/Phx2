@@ -2,8 +2,10 @@ from django.test import TestCase, Client
 from unittest.mock import patch, MagicMock
 from django.utils import timezone
 from datetime import timedelta
+from requests.exceptions import RequestException
 from api.models import Room
 from .models import SpotifyToken, Vote
+from .util import execute_spotify_api_request, refresh_spotify_token
 
 
 class SpotifyTokenModelTests(TestCase):
@@ -55,6 +57,53 @@ class IsAuthenticatedViewTests(TestCase):
         response = client.get("/spotify/is-authenticated")
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.json()["status"])
+
+
+class SpotifyUtilTests(TestCase):
+    """Tests for Spotify helper request behavior."""
+
+    def setUp(self):
+        self.session_id = "session-util"
+        SpotifyToken.objects.create(
+            user=self.session_id,
+            access_token="access_abc",
+            refresh_token="refresh_abc",
+            token_type="Bearer",
+            expires_in=timezone.now() + timedelta(hours=1),
+        )
+
+    @patch("spotify.util.get")
+    @patch("spotify.util.post")
+    def test_post_request_does_not_fetch_follow_up_state(self, mock_post, mock_get):
+        """Control POST calls should not make a redundant GET request."""
+        mock_post.return_value = MagicMock(ok=True, status_code=204)
+
+        result = execute_spotify_api_request(self.session_id, "player/next", post_=True)
+
+        self.assertEqual(result, {"success": True, "status_code": 204})
+        mock_post.assert_called_once()
+        mock_get.assert_not_called()
+
+    @patch("spotify.util.get")
+    @patch("spotify.util.put")
+    def test_put_request_does_not_fetch_follow_up_state(self, mock_put, mock_get):
+        """Control PUT calls should not make a redundant GET request."""
+        mock_put.return_value = MagicMock(ok=True, status_code=204)
+
+        result = execute_spotify_api_request(self.session_id, "player/pause", put_=True)
+
+        self.assertEqual(result, {"success": True, "status_code": 204})
+        mock_put.assert_called_once()
+        mock_get.assert_not_called()
+
+    @patch("spotify.util.post")
+    def test_refresh_spotify_token_returns_false_when_request_fails(self, mock_post):
+        """Refresh helper should fail gracefully on request errors."""
+        mock_post.side_effect = RequestException("boom")
+
+        result = refresh_spotify_token(self.session_id)
+
+        self.assertFalse(result)
 
 
 class PauseSongViewTests(TestCase):

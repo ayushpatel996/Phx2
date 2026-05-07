@@ -2,9 +2,11 @@ from django.shortcuts import redirect
 from .credentials import REDIRECT_URI, CLIENT_SECRET, CLIENT_ID
 from rest_framework.views import APIView
 from requests import Request, post
+from requests.exceptions import RequestException
 from rest_framework import status
 from rest_framework.response import Response
 from .util import (
+    REQUEST_TIMEOUT,
     is_spotify_authenticated,
     update_or_create_user_tokens,
     execute_spotify_api_request,
@@ -38,13 +40,20 @@ def spotify_callback(request, format=None):
         # User denied auth or something went wrong — redirect home
         return redirect('frontend:')
 
-    response = post('https://accounts.spotify.com/api/token', data={
-        'grant_type': 'authorization_code',
-        'code': code,
-        'redirect_uri': REDIRECT_URI,
-        'client_id': CLIENT_ID,
-        'client_secret': CLIENT_SECRET
-    }).json()
+    try:
+        response = post(
+            'https://accounts.spotify.com/api/token',
+            data={
+                'grant_type': 'authorization_code',
+                'code': code,
+                'redirect_uri': REDIRECT_URI,
+                'client_id': CLIENT_ID,
+                'client_secret': CLIENT_SECRET
+            },
+            timeout=REQUEST_TIMEOUT,
+        ).json()
+    except RequestException:
+        return redirect('frontend:')
 
     access_token = response.get('access_token')
     token_type = response.get('token_type')

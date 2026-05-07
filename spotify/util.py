@@ -3,9 +3,11 @@ from django.utils import timezone
 from datetime import timedelta
 from .credentials import CLIENT_ID, CLIENT_SECRET
 from requests import post, put, get
+from requests.exceptions import RequestException
 
 
 BASE_URL = "https://api.spotify.com/v1/me/"
+REQUEST_TIMEOUT = 5
 
 def get_user_tokens(session_id):
     return SpotifyToken.objects.filter(user=session_id).first()
@@ -42,21 +44,36 @@ def is_spotify_authenticated(session_id):
 
 
 def refresh_spotify_token(session_id):
-    refresh_token = get_user_tokens(session_id).refresh_token
+    tokens = get_user_tokens(session_id)
+    if not tokens:
+        return False
 
-    response = post('https://accounts.spotify.com/api/token', data={
-        'grant_type': 'refresh_token',
-        'refresh_token': refresh_token,
-        'client_id': CLIENT_ID,
-        'client_secret': CLIENT_SECRET
-    }).json()
+    refresh_token = tokens.refresh_token
+
+    try:
+        response = post(
+            'https://accounts.spotify.com/api/token',
+            data={
+                'grant_type': 'refresh_token',
+                'refresh_token': refresh_token,
+                'client_id': CLIENT_ID,
+                'client_secret': CLIENT_SECRET
+            },
+            timeout=REQUEST_TIMEOUT,
+        ).json()
+    except RequestException:
+        return False
 
     access_token = response.get('access_token')
     token_type = response.get('token_type')
     expires_in = response.get('expires_in')
 
+    if not access_token or not token_type or not expires_in:
+        return False
+
     update_or_create_user_tokens(
         session_id, access_token, token_type, expires_in, refresh_token)
+    return True
 
 
 def execute_spotify_api_request(session_id, endpoint, post_=False, put_=False):
@@ -67,16 +84,20 @@ def execute_spotify_api_request(session_id, endpoint, post_=False, put_=False):
     headers = {'Content-Type': 'application/json',
                'Authorization': "Bearer " + tokens.access_token}
 
-    if post_:
-        post(BASE_URL + endpoint, headers=headers)
-    if put_:
-        put(BASE_URL + endpoint, headers=headers)
-
-    response = get(BASE_URL + endpoint, {}, headers=headers)
     try:
+        if post_:
+            response = post(BASE_URL + endpoint, headers=headers, timeout=REQUEST_TIMEOUT)
+            return {'success': response.ok, 'status_code': response.status_code}
+
+        if put_:
+            response = put(BASE_URL + endpoint, headers=headers, timeout=REQUEST_TIMEOUT)
+            return {'success': response.ok, 'status_code': response.status_code}
+
+        response = get(BASE_URL + endpoint, {}, headers=headers, timeout=REQUEST_TIMEOUT)
         return response.json()
-    except Exception:
+    except RequestException:
         return {'error': 'Issue with request'}
+
 
 def play_song(session_id):
     return execute_spotify_api_request(session_id, "player/play", put_=True)
@@ -84,6 +105,7 @@ def play_song(session_id):
 
 def pause_song(session_id):
     return execute_spotify_api_request(session_id, "player/pause", put_=True)
+
 
 def skip_song(session_id):
     return execute_spotify_api_request(session_id, "player/next", post_=True)
