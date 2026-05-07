@@ -26,9 +26,19 @@ COPY . .
 # Copy built frontend assets from builder stage
 COPY --from=frontend-builder /app/frontend/static/frontend/ /app/frontend/static/frontend/
 
-# Set environment variables
+# Build-time secrets (passed via --build-arg / GitHub Actions build-args)
+ARG SECRET_KEY
+ARG SPOTIFY_CLIENT_ID
+ARG SPOTIFY_CLIENT_SECRET
+ARG REDIRECT_URI=http://127.0.0.1:8000/spotify/redirect
+
+# Promote build args to runtime environment variables
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=PHx2.settings
+ENV SECRET_KEY=${SECRET_KEY}
+ENV SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+ENV SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+ENV REDIRECT_URI=${REDIRECT_URI}
 
 # Run migrations and start server (simplified for demo)
 # In production, use Gunicorn and a real DB

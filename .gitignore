@@ -6,10 +6,14 @@ myvenv/
 venv/
 env/
 .env
+.env.local
 db.sqlite3
 /static/
 media/
 *.log
+
+# Secrets
+spotify/credentials.py
 
 # Node/Frontend
 node_modules/
