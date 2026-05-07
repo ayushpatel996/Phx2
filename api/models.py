@@ -3,15 +3,14 @@ import string
 import random
 
 def generate_unique_code():                     #to generate a unique code for our room
-    length=6
+    length = 6
 
-    while(True):
-        code =''.join(random.choices(string.ascii_uppercase, k=length))
-        
+    while True:
+        code = ''.join(random.choices(string.ascii_uppercase, k=length))
+
         #Checking if the code is unique (comparing it to all codes of the rooms in our server)
-        if(Room.objects.filter(code=code)).count()==0:
-            break
-    return code
+        if not Room.objects.filter(code=code).exists():
+            return code
 
 # Create your models here.
 class Room(models.Model):

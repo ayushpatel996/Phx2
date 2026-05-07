@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect
 from .credentials import REDIRECT_URI, CLIENT_SECRET, CLIENT_ID
 from rest_framework.views import APIView
 from requests import Request, post
@@ -74,11 +74,10 @@ class IsAuthenticated(APIView):
 class CurrentSong(APIView):
     def get(self, request, format=None):
         room_code = self.request.session.get('room_code')
-        room = Room.objects.filter(code=room_code)
-        if room.exists():
-            room = room[0]
-        else:
+        room = Room.objects.filter(code=room_code).first()
+        if not room:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
+
         host = room.host
         endpoint = "player/currently-playing"
         response = execute_spotify_api_request(host, endpoint)
@@ -100,9 +99,9 @@ class CurrentSong(APIView):
                 artist_string += ", "
             name = artist.get('name')
             artist_string += name
-        
-        votes = len(Vote.objects.filter(room=room, song_id = song_id))
-        
+
+        votes = Vote.objects.filter(room=room, song_id=song_id).count()
+
         song = {
             'title': item.get('name'),
             'artist': artist_string,
@@ -114,16 +113,14 @@ class CurrentSong(APIView):
             'votes_required': room.votes_to_skip,
             'id': song_id
         }
-        self.update_room_song(room, song_id )
+        self.update_room_song(room, song_id)
         return Response(song, status=status.HTTP_200_OK)
 
     def update_room_song(self, room, song_id):
-        current_song = room.current_song
-
-        if current_song != song_id:
+        if room.current_song != song_id:
             room.current_song = song_id
             room.save(update_fields=['current_song'])
-            votes = Vote.objects.filter(room=room).delete()
+            Vote.objects.filter(room=room).delete()
 
 
 
@@ -161,7 +158,7 @@ class SkipSong(APIView):
         votes = Vote.objects.filter(room=room, song_id=room.current_song)
         votes_needed = room.votes_to_skip
 
-        if self.request.session.session_key == room.host or len(votes) + 1 >= votes_needed:
+        if self.request.session.session_key == room.host or votes.count() + 1 >= votes_needed:
             votes.delete()
             skip_song(room.host)
         else:
