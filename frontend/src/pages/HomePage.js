@@ -50,7 +50,7 @@ export default function HomePage() {
   const clearRoomCode = () => setRoomCode(null);
 
   const renderHomePage = () => (
-    <div className="min-h-screen w-full flex flex-col items-center justify-start p-6 pt-24 overflow-x-hidden">
+    <div className="min-h-screen w-full flex flex-col items-center justify-start p-6 pt-24 pb-32 overflow-x-hidden">
       <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-spotify-green/10 blur-[120px] rounded-full pointer-events-none" />
       <div className="fixed bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-blue-500/10 blur-[120px] rounded-full pointer-events-none" />
 

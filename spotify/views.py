@@ -178,7 +178,7 @@ class TopTracks(APIView):
         if not is_spotify_authenticated(session_id):
             return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
         
-        endpoint = "top/tracks?limit=5&time_range=long_term"
+        endpoint = "top/tracks?limit=5&time_range=medium_term"
         response = execute_spotify_api_request(session_id, endpoint)
 
         if 'items' not in response:
