@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import redirect
 from .credentials import REDIRECT_URI, CLIENT_SECRET, CLIENT_ID
 from rest_framework.views import APIView
@@ -5,6 +6,8 @@ from requests import Request, post
 from requests.exceptions import RequestException
 from rest_framework import status
 from rest_framework.response import Response
+
+logger = logging.getLogger(__name__)
 from .util import (
     REQUEST_TIMEOUT,
     is_spotify_authenticated,
@@ -37,6 +40,7 @@ def spotify_callback(request, format=None):
     code = request.GET.get('code')
 
     if error or not code:
+        logger.error(f"Spotify callback error: {error}. Code present: {bool(code)}")
         # User denied auth or something went wrong — redirect home
         return redirect('frontend:')
 
@@ -52,7 +56,8 @@ def spotify_callback(request, format=None):
             },
             timeout=REQUEST_TIMEOUT,
         ).json()
-    except RequestException:
+    except RequestException as e:
+        logger.error(f"Spotify token exchange request failed: {e}")
         return redirect('frontend:')
 
     access_token = response.get('access_token')
@@ -62,6 +67,7 @@ def spotify_callback(request, format=None):
     error = response.get('error')
 
     if error or not access_token:
+        logger.error(f"Spotify token exchange returned error: {error}. Access token present: {bool(access_token)}")
         return redirect('frontend:')
 
     if not request.session.exists(request.session.session_key):
@@ -85,6 +91,7 @@ class CurrentSong(APIView):
         room_code = self.request.session.get('room_code')
         room = Room.objects.filter(code=room_code).first()
         if not room:
+            logger.warning(f"CurrentSong: Room not found for code {room_code}")
             return Response({}, status=status.HTTP_404_NOT_FOUND)
 
         host = room.host
@@ -92,6 +99,8 @@ class CurrentSong(APIView):
         response = execute_spotify_api_request(host, endpoint)
 
         if 'error' in response or 'item' not in response:
+            if 'error' in response:
+                logger.error(f"Spotify currently-playing error for host {host}: {response['error']}")
             return Response({}, status=status.HTTP_204_NO_CONTENT)
 
         item = response.get('item')
@@ -138,6 +147,7 @@ class PauseSong(APIView):
         room_code = self.request.session.get('room_code')
         room = Room.objects.filter(code=room_code).first()
         if not room:
+            logger.warning(f"PauseSong: Room not found for code {room_code}")
             return Response({}, status=status.HTTP_404_NOT_FOUND)
         if self.request.session.session_key == room.host or room.guest_can_pause:
             pause_song(room.host)
@@ -150,6 +160,7 @@ class PlaySong(APIView):
         room_code = self.request.session.get('room_code')
         room = Room.objects.filter(code=room_code).first()
         if not room:
+            logger.warning(f"PlaySong: Room not found for code {room_code}")
             return Response({}, status=status.HTTP_404_NOT_FOUND)
         if self.request.session.session_key == room.host or room.guest_can_pause:
             play_song(room.host)
@@ -162,6 +173,7 @@ class SkipSong(APIView):
         room_code = self.request.session.get('room_code')
         room = Room.objects.filter(code=room_code).first()
         if not room:
+            logger.warning(f"SkipSong: Room not found for code {room_code}")
             return Response({}, status=status.HTTP_404_NOT_FOUND)
 
         votes = Vote.objects.filter(room=room, song_id=room.current_song)
@@ -182,12 +194,14 @@ class TopTracks(APIView):
     def get(self, request, format=None):
         session_id = self.request.session.session_key
         if not is_spotify_authenticated(session_id):
+            logger.warning(f"TopTracks: User not authenticated (session: {session_id})")
             return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
         
         endpoint = "top/tracks?limit=5&time_range=medium_term"
         response = execute_spotify_api_request(session_id, endpoint)
 
         if 'items' not in response:
+            logger.warning(f"TopTracks: No items in response for session {session_id}. Response: {response}")
             return Response({'error': 'No tracks found'}, status=status.HTTP_204_NO_CONTENT)
 
         tracks = []
@@ -207,12 +221,14 @@ class TopPlaylists(APIView):
     def get(self, request, format=None):
         session_id = self.request.session.session_key
         if not is_spotify_authenticated(session_id):
+            logger.warning(f"TopPlaylists: User not authenticated (session: {session_id})")
             return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
         
         endpoint = "playlists?limit=5"
         response = execute_spotify_api_request(session_id, endpoint)
 
         if 'items' not in response:
+            logger.warning(f"TopPlaylists: No items in response for session {session_id}. Response: {response}")
             return Response({'error': 'No playlists found'}, status=status.HTTP_204_NO_CONTENT)
 
         playlists = []

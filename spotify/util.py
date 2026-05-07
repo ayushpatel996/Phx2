@@ -1,9 +1,12 @@
+import logging
 from .models import SpotifyToken
 from django.utils import timezone
 from datetime import timedelta
 from .credentials import CLIENT_ID, CLIENT_SECRET
 from requests import post, put, get
 from requests.exceptions import RequestException
+
+logger = logging.getLogger(__name__)
 
 
 BASE_URL = "https://api.spotify.com/v1/me/"
@@ -61,7 +64,8 @@ def refresh_spotify_token(session_id):
             },
             timeout=REQUEST_TIMEOUT,
         ).json()
-    except RequestException:
+    except RequestException as e:
+        logger.error(f"Error refreshing Spotify token for session {session_id}: {e}")
         return False
 
     access_token = response.get('access_token')
@@ -69,6 +73,7 @@ def refresh_spotify_token(session_id):
     expires_in = response.get('expires_in')
 
     if not access_token or not token_type or not expires_in:
+        logger.warning(f"Failed to refresh Spotify token for session {session_id}. Response: {response}")
         return False
 
     update_or_create_user_tokens(
@@ -79,6 +84,7 @@ def refresh_spotify_token(session_id):
 def execute_spotify_api_request(session_id, endpoint, post_=False, put_=False):
     tokens = get_user_tokens(session_id)
     if not tokens:
+        logger.warning(f"execute_spotify_api_request: No tokens found for session {session_id}")
         return {'error': 'User not authenticated'}
 
     headers = {'Content-Type': 'application/json',
@@ -95,7 +101,8 @@ def execute_spotify_api_request(session_id, endpoint, post_=False, put_=False):
 
         response = get(BASE_URL + endpoint, {}, headers=headers, timeout=REQUEST_TIMEOUT)
         return response.json()
-    except RequestException:
+    except RequestException as e:
+        logger.error(f"Spotify API request error for session {session_id} on endpoint {endpoint}: {e}")
         return {'error': 'Issue with request'}
 
 
