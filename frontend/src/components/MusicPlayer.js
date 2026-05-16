@@ -25,10 +25,10 @@ export default function MusicPlayer({
   const songProgress = duration ? (time / duration) * 100 : 0;
 
   return (
-    <div className="relative group overflow-hidden rounded-3xl glass transition-all duration-500 hover:shadow-spotify-green/10">
+    <div className="relative group overflow-hidden rounded-3xl glass transition-all duration-500 hover:shadow-[0_0_30px_var(--accent-glow)]">
       <div 
         className="absolute inset-0 opacity-20 blur-3xl scale-150 transition-all duration-1000"
-        style={{ background: `radial-gradient(circle, ${is_playing ? '#1DB954' : '#ffffff'} 0%, transparent 70%)` }}
+        style={{ background: `radial-gradient(circle, var(--accent-primary) 0%, transparent 70%)` }}
       />
 
       <div className="relative z-10 flex flex-col p-6 gap-6">
@@ -40,7 +40,10 @@ export default function MusicPlayer({
               className={`w-24 h-24 rounded-2xl shadow-2xl transition-all duration-700 ${is_playing ? 'scale-100 rotate-0' : 'scale-90 -rotate-3 opacity-60'}`}
             />
             {is_playing && (
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-spotify-green rounded-full flex items-center justify-center animate-pulse">
+              <div 
+                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center animate-pulse shadow-[0_0_10px_var(--accent-primary)]"
+                style={{ backgroundColor: 'var(--accent-primary)' }}
+              >
                 <div className="w-2 h-2 bg-black rounded-full" />
               </div>
             )}
@@ -80,8 +83,11 @@ export default function MusicPlayer({
         <div className="space-y-2">
           <div className="relative h-1 w-full bg-white/10 rounded-full overflow-hidden">
             <div 
-              className="absolute h-full bg-spotify-green transition-all duration-1000 ease-linear shadow-[0_0_10px_rgba(29,185,84,0.5)]"
-              style={{ width: `${songProgress}%` }}
+              className="absolute h-full transition-all duration-1000 ease-linear shadow-[0_0_10px_var(--accent-glow)]"
+              style={{ 
+                width: `${songProgress}%`,
+                backgroundColor: 'var(--accent-primary)'
+              }}
             />
           </div>
           <div className="flex justify-between text-[10px] font-bold tracking-tighter text-white/30 uppercase">

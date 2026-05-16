@@ -3,6 +3,10 @@
 @theme {
   --color-spotify-green: #1DB954;
   --color-midnight-900: #020617;
+  
+  /* Dynamic Accents - Updated via JS */
+  --accent-primary: var(--color-spotify-green);
+  --accent-glow: rgba(29, 185, 84, 0.3);
 }
 
 @layer base {
@@ -27,10 +31,12 @@
 @layer components {
   .glass {
     @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 20px -5px var(--accent-glow);
   }
   
   .btn-spotify {
-    @apply px-8 py-3 bg-spotify-green text-black font-bold rounded-full transition-all duration-300 hover:scale-105 hover:bg-[#1ed760] active:scale-95 disabled:opacity-50 disabled:hover:scale-100;
+    @apply px-8 py-3 text-black font-bold rounded-full transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100;
+    background-color: var(--accent-primary);
   }
   
   .btn-outline {
@@ -38,7 +44,11 @@
   }
 
   .input-minimal {
-    @apply w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-spotify-green/50 transition-all text-center tracking-[0.2em] text-xl;
+    @apply w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none transition-all text-center tracking-[0.2em] text-xl;
+    &:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
   }
 }
 

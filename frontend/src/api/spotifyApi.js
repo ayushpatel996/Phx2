@@ -25,7 +25,7 @@ export async function isAuthenticated() {
 
 export async function getCurrentSong() {
   const res = await fetch("/spotify/current-song");
-  if (!res.ok) return {};
+  if (res.status === 204 || !res.ok) return {};
   return res.json();
 }
 
@@ -39,4 +39,24 @@ export async function playSong() {
 
 export async function skipSong() {
   return fetch("/spotify/skip", { method: "POST", headers: JSON_HEADERS });
+}
+
+export async function searchSpotify(query) {
+  const res = await fetch(`/spotify/search?q=${encodeURIComponent(query)}`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function addToQueue(uri) {
+  return fetch("/spotify/add-to-queue", {
+    method: "POST",
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ uri }),
+  });
+}
+
+export async function getQueue() {
+  const res = await fetch("/spotify/queue");
+  if (res.status === 204 || !res.ok) return [];
+  return res.json();
 }

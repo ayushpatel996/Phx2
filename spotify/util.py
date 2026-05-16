@@ -9,7 +9,7 @@ from requests.exceptions import RequestException
 logger = logging.getLogger(__name__)
 
 
-BASE_URL = "https://api.spotify.com/v1/me/"
+BASE_URL = "https://api.spotify.com/v1/"
 REQUEST_TIMEOUT = 5
 
 def get_user_tokens(session_id):
@@ -81,7 +81,7 @@ def refresh_spotify_token(session_id):
     return True
 
 
-def execute_spotify_api_request(session_id, endpoint, post_=False, put_=False):
+def execute_spotify_api_request(session_id, endpoint, post_=False, put_=False, params_=None):
     tokens = get_user_tokens(session_id)
     if not tokens:
         logger.warning(f"execute_spotify_api_request: No tokens found for session {session_id}")
@@ -92,27 +92,47 @@ def execute_spotify_api_request(session_id, endpoint, post_=False, put_=False):
 
     try:
         if post_:
-            response = post(BASE_URL + endpoint, headers=headers, timeout=REQUEST_TIMEOUT)
+            response = post(BASE_URL + endpoint, headers=headers, params=params_, timeout=REQUEST_TIMEOUT)
             return {'success': response.ok, 'status_code': response.status_code}
 
         if put_:
-            response = put(BASE_URL + endpoint, headers=headers, timeout=REQUEST_TIMEOUT)
+            response = put(BASE_URL + endpoint, headers=headers, params=params_, timeout=REQUEST_TIMEOUT)
             return {'success': response.ok, 'status_code': response.status_code}
 
-        response = get(BASE_URL + endpoint, {}, headers=headers, timeout=REQUEST_TIMEOUT)
+        response = get(BASE_URL + endpoint, params=params_, headers=headers, timeout=REQUEST_TIMEOUT)
         return response.json()
     except RequestException as e:
         logger.error(f"Spotify API request error for session {session_id} on endpoint {endpoint}: {e}")
         return {'error': 'Issue with request'}
 
 
+def search_spotify(session_id, query):
+    params = {
+        'q': query,
+        'type': 'track',
+        'limit': 10
+    }
+    return execute_spotify_api_request(session_id, "search", params_=params)
+
+
+def add_to_queue(session_id, uri):
+    params = {
+        'uri': uri
+    }
+    return execute_spotify_api_request(session_id, "me/player/queue", post_=True, params_=params)
+
+
+def get_queue(session_id):
+    return execute_spotify_api_request(session_id, "me/player/queue")
+
+
 def play_song(session_id):
-    return execute_spotify_api_request(session_id, "player/play", put_=True)
+    return execute_spotify_api_request(session_id, "me/player/play", put_=True)
 
 
 def pause_song(session_id):
-    return execute_spotify_api_request(session_id, "player/pause", put_=True)
+    return execute_spotify_api_request(session_id, "me/player/pause", put_=True)
 
 
 def skip_song(session_id):
-    return execute_spotify_api_request(session_id, "player/next", post_=True)
+    return execute_spotify_api_request(session_id, "me/player/next", post_=True)

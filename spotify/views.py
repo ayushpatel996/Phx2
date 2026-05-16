@@ -16,6 +16,9 @@ from .util import (
     pause_song,
     play_song,
     skip_song,
+    search_spotify,
+    add_to_queue,
+    get_queue,
 )
 from api.models import Room
 from .models import Vote
@@ -95,7 +98,7 @@ class CurrentSong(APIView):
             return Response({}, status=status.HTTP_404_NOT_FOUND)
 
         host = room.host
-        endpoint = "player/currently-playing"
+        endpoint = "me/player/currently-playing"
         response = execute_spotify_api_request(host, endpoint)
 
         if 'error' in response or 'item' not in response:
@@ -197,7 +200,7 @@ class TopTracks(APIView):
             logger.warning(f"TopTracks: User not authenticated (session: {session_id})")
             return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
         
-        endpoint = "top/tracks?limit=5&time_range=medium_term"
+        endpoint = "me/top/tracks?limit=5&time_range=medium_term"
         response = execute_spotify_api_request(session_id, endpoint)
 
         if 'items' not in response:
@@ -224,7 +227,7 @@ class TopPlaylists(APIView):
             logger.warning(f"TopPlaylists: User not authenticated (session: {session_id})")
             return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
         
-        endpoint = "playlists?limit=5"
+        endpoint = "me/playlists?limit=5"
         response = execute_spotify_api_request(session_id, endpoint)
 
         if 'items' not in response:
@@ -241,3 +244,77 @@ class TopPlaylists(APIView):
             })
         
         return Response(playlists, status=status.HTTP_200_OK)
+
+
+class SearchSpotify(APIView):
+    def get(self, request, format=None):
+        query = request.GET.get('q')
+        if not query:
+            return Response({'error': 'No query provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        session_id = self.request.session.session_key
+        response = search_spotify(session_id, query)
+        
+        if 'error' in response:
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            
+        tracks = []
+        for item in response.get('tracks', {}).get('items', []):
+            artist_string = ", ".join([artist.get('name') for artist in item.get('artists')])
+            tracks.append({
+                'id': item.get('id'),
+                'uri': item.get('uri'),
+                'title': item.get('name'),
+                'artist': artist_string,
+                'image_url': item.get('album').get('images')[0].get('url') if item.get('album').get('images') else None,
+                'duration_ms': item.get('duration_ms')
+            })
+            
+        return Response(tracks, status=status.HTTP_200_OK)
+
+
+class AddToQueue(APIView):
+    def post(self, request, format=None):
+        room_code = self.request.session.get('room_code')
+        room = Room.objects.filter(code=room_code).first()
+        if not room:
+            return Response({'error': 'Room not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        uri = request.data.get('uri')
+        if not uri:
+            return Response({'error': 'No track URI provided'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # For now, anyone in the room can add to the host's queue
+        response = add_to_queue(room.host, uri)
+        
+        if 'error' in response:
+             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+             
+        return Response({'success': True}, status=status.HTTP_200_OK)
+
+
+class GetQueue(APIView):
+    def get(self, request, format=None):
+        room_code = self.request.session.get('room_code')
+        room = Room.objects.filter(code=room_code).first()
+        if not room:
+            return Response({'error': 'Room not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        response = get_queue(room.host)
+        
+        if 'error' in response or 'queue' not in response:
+            return Response({'error': 'Could not fetch queue'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        queue = []
+        # Return the next 5 tracks in the queue
+        for item in response.get('queue')[:5]:
+            artist_string = ", ".join([artist.get('name') for artist in item.get('artists')])
+            queue.append({
+                'id': item.get('id'),
+                'title': item.get('name'),
+                'artist': artist_string,
+                'image_url': item.get('album').get('images')[0].get('url') if item.get('album').get('images') else None,
+                'duration_ms': item.get('duration_ms')
+            })
+            
+        return Response(queue, status=status.HTTP_200_OK)
