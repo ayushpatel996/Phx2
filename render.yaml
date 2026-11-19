@@ -12,6 +12,8 @@ services:
     envVars:
       - key: DEBUG
         value: "False"
+      - key: ALLOWED_HOSTS
+        value: "phx2-app.onrender.com,localhost,127.0.0.1"
       - key: SECRET_KEY
         generateValue: true
       - key: NODE_VERSION
