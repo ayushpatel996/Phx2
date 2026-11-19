@@ -2,12 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: ["main", "master"]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: ["main", "master"]
 
 jobs:
-  # ─── Backend: Django Tests ────────────────────────────────────────────────
   backend-tests:
     name: Django Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -15,6 +14,13 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
+
+    env:
+      SECRET_KEY: ci-test-secret-key
+      DEBUG: "False"
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
+      SPOTIFY_CLIENT_ID: test-client-id
+      SPOTIFY_CLIENT_SECRET: test-client-secret
 
     steps:
       - name: Checkout repository
@@ -31,14 +37,12 @@ jobs:
       - name: Run Django system check
         run: python manage.py check
 
+      - name: Check migrations
+        run: python manage.py makemigrations --check --dry-run
+
       - name: Run Django tests
-        env:
-          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
-          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
-          DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
         run: python manage.py test api spotify --verbosity=2
 
-  # ─── Frontend: Build Check ────────────────────────────────────────────────
   frontend-build:
     name: Frontend Build Check (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
@@ -63,7 +67,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install Node dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
 
       - name: Build frontend bundle
-        run: npx webpack --mode production
+        run: npm run build
