@@ -1,3 +1,5 @@
+"""HTTP endpoints for creating, joining, and managing listening rooms."""
+
 from rest_framework import generics, status
 from .serializers import RoomSerializer, CreateRoomSerializer, UpdateRoomSerializer
 from .models import Room
@@ -5,9 +7,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import JsonResponse
 
-# Create your views here.
 
-class RoomView(generics.ListAPIView):   #This will allow to view a room and create a new room (and show it in webapp)
+class RoomView(generics.ListAPIView):
+    """Return the serialized room list."""
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
 
@@ -51,18 +53,19 @@ class CreateRoomView(APIView):
     serializer_class = CreateRoomSerializer
 
     def post(self, request, format=None):
-        if not self.request.session.exists(self.request.session.session_key): #if current user has an active session
+        if not self.request.session.exists(self.request.session.session_key):
             self.request.session.create()
 
         serializer = self.serializer_class(data=request.data)
 
-        if serializer.is_valid():  #checking validity of votes and skip
+        if serializer.is_valid():
             guest_can_pause = serializer.validated_data['guest_can_pause']
             votes_to_skip = serializer.validated_data['votes_to_skip']
             host = self.request.session.session_key
 
+            # Reuse the host's existing room, updating its settings.
             room = Room.objects.filter(host=host).first()
-            if room:       #if the room already exits we will update the setting only
+            if room:
                 room.guest_can_pause = guest_can_pause
                 room.votes_to_skip = votes_to_skip
                 room.save(update_fields=['guest_can_pause', 'votes_to_skip'])

@@ -3,8 +3,8 @@ name: Publish Container
 on:
   push:
     tags:
-      - 'v*' # Push on version tags (e.g., v1.0.0)
-  workflow_dispatch: # Allow manual trigger
+      - 'v*'
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -45,7 +45,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            SECRET_KEY=${{ secrets.SECRET_KEY || 'ci-build-key-not-used-at-runtime' }}
+            ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS || 'localhost,127.0.0.1' }}
             SPOTIFY_CLIENT_ID=${{ secrets.SPOTIFY_CLIENT_ID }}
             SPOTIFY_CLIENT_SECRET=${{ secrets.SPOTIFY_CLIENT_SECRET }}
             REDIRECT_URI=${{ secrets.REDIRECT_URI }}
