@@ -15,18 +15,18 @@ const JSON_HEADERS = {
 // --- Room API ---
 
 export async function getUserRoom() {
-  const res = await fetch("/api/user-in-room");
+  const res = await fetch("/api/v1/user-in-room");
   return res.json();
 }
 
 export async function getRoom(code) {
-  const res = await fetch(`/api/get-room?code=${code}`);
+  const res = await fetch(`/api/v1/get-room?code=${code}`);
   if (!res.ok) return null;
   return res.json();
 }
 
 export async function createRoom(guestCanPause, votesToSkip) {
-  const res = await fetch("/api/create-room", {
+  const res = await fetch("/api/v1/create-room", {
     method: "POST",
     headers: JSON_HEADERS,
     body: JSON.stringify({
@@ -38,7 +38,7 @@ export async function createRoom(guestCanPause, votesToSkip) {
 }
 
 export async function updateRoom(code, guestCanPause, votesToSkip) {
-  const res = await fetch("/api/update-room", {
+  const res = await fetch("/api/v1/update-room", {
     method: "PATCH",
     headers: JSON_HEADERS,
     body: JSON.stringify({
@@ -51,7 +51,7 @@ export async function updateRoom(code, guestCanPause, votesToSkip) {
 }
 
 export async function joinRoom(code) {
-  const res = await fetch("/api/join-room", {
+  const res = await fetch("/api/v1/join-room", {
     method: "POST",
     headers: JSON_HEADERS,
     body: JSON.stringify({ code }),
@@ -60,7 +60,7 @@ export async function joinRoom(code) {
 }
 
 export async function leaveRoom() {
-  const res = await fetch("/api/leave-room", {
+  const res = await fetch("/api/v1/leave-room", {
     method: "POST",
     headers: JSON_HEADERS,
   });

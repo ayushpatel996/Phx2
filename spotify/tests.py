@@ -177,3 +177,46 @@ class SkipSongViewTests(TestCase):
         response = guest.post("/spotify/skip", content_type="application/json")
         self.assertEqual(response.status_code, 204)
         self.assertEqual(Vote.objects.filter(room=self.room).count(), 1)
+
+    @patch("spotify.views.skip_song")
+    def test_duplicate_guest_vote_returns_409_and_does_not_skip(self, mock_skip):
+        """A guest voting twice on the same song should get 409 without triggering skip."""
+        guest = Client()
+        guest.post(
+            "/api/v1/join-room",
+            data={"code": self.room_code},
+            content_type="application/json",
+        )
+        first = guest.post("/api/v1/spotify/skip", content_type="application/json")
+        second = guest.post("/api/v1/spotify/skip", content_type="application/json")
+
+        self.assertEqual(first.status_code, 204)
+        self.assertEqual(second.status_code, 409)
+        self.assertEqual(Vote.objects.filter(room=self.room).count(), 1)
+        mock_skip.assert_not_called()
+
+    @patch("spotify.views.skip_song")
+    def test_guest_votes_reaching_threshold_skips_and_clears_votes(self, mock_skip):
+        """When distinct guest votes reach votes_to_skip, skip_song is called once and votes clear."""
+        guest1 = Client()
+        guest1.post("/api/v1/join-room", data={"code": self.room_code}, content_type="application/json")
+        guest2 = Client()
+        guest2.post("/api/v1/join-room", data={"code": self.room_code}, content_type="application/json")
+
+        r1 = guest1.post("/api/v1/spotify/skip", content_type="application/json")
+        r2 = guest2.post("/api/v1/spotify/skip", content_type="application/json")
+
+        self.assertEqual(r1.status_code, 204)
+        self.assertEqual(r2.status_code, 204)
+        self.assertEqual(Vote.objects.filter(room=self.room).count(), 0)
+        mock_skip.assert_called_once()
+
+    def test_guest_skip_without_current_song_returns_400(self):
+        """Skipping when no song is playing should return 400."""
+        self.room.current_song = None
+        self.room.save(update_fields=["current_song"])
+        guest = Client()
+        guest.post("/api/v1/join-room", data={"code": self.room_code}, content_type="application/json")
+
+        response = guest.post("/api/v1/spotify/skip", content_type="application/json")
+        self.assertEqual(response.status_code, 400)

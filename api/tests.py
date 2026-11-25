@@ -165,3 +165,22 @@ class LeaveRoomViewTests(TestCase):
         fresh_client = Client()
         response = fresh_client.post("/api/leave-room", content_type="application/json")
         self.assertEqual(response.status_code, 200)
+
+
+class ApiVersioningTests(TestCase):
+    """Tests for /api/v1/ versioned room endpoints."""
+
+    def test_v1_create_and_get_room(self):
+        """Versioned /api/v1/ endpoints should create and retrieve a room."""
+        client = Client()
+        create_resp = client.post(
+            "/api/v1/create-room",
+            data={"guest_can_pause": True, "votes_to_skip": 2},
+            content_type="application/json",
+        )
+        self.assertEqual(create_resp.status_code, 201)
+        code = create_resp.json()["code"]
+
+        get_resp = client.get(f"/api/v1/get-room?code={code}")
+        self.assertEqual(get_resp.status_code, 200)
+        self.assertEqual(get_resp.json()["code"], code)

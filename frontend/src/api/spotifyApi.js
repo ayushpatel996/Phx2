@@ -14,41 +14,42 @@ const JSON_HEADERS = {
 // --- Spotify API ---
 
 export async function getAuthUrl() {
-  const res = await fetch("/spotify/get-auth-url");
+  const res = await fetch("/api/v1/spotify/get-auth-url");
   return res.json();
 }
 
 export async function isAuthenticated() {
-  const res = await fetch("/spotify/is-authenticated");
+  const res = await fetch("/api/v1/spotify/is-authenticated");
   return res.json();
 }
 
 export async function getCurrentSong() {
-  const res = await fetch("/spotify/current-song");
+  const res = await fetch("/api/v1/spotify/current-song");
+  if (res.status === 404) return { roomNotFound: true };
   if (res.status === 204 || !res.ok) return {};
   return res.json();
 }
 
 export async function pauseSong() {
-  return fetch("/spotify/pause", { method: "PUT", headers: JSON_HEADERS });
+  return fetch("/api/v1/spotify/pause", { method: "PUT", headers: JSON_HEADERS });
 }
 
 export async function playSong() {
-  return fetch("/spotify/play", { method: "PUT", headers: JSON_HEADERS });
+  return fetch("/api/v1/spotify/play", { method: "PUT", headers: JSON_HEADERS });
 }
 
 export async function skipSong() {
-  return fetch("/spotify/skip", { method: "POST", headers: JSON_HEADERS });
+  return fetch("/api/v1/spotify/skip", { method: "POST", headers: JSON_HEADERS });
 }
 
 export async function searchSpotify(query) {
-  const res = await fetch(`/spotify/search?q=${encodeURIComponent(query)}`);
+  const res = await fetch(`/api/v1/spotify/search?q=${encodeURIComponent(query)}`);
   if (!res.ok) return [];
   return res.json();
 }
 
 export async function addToQueue(uri) {
-  return fetch("/spotify/add-to-queue", {
+  return fetch("/api/v1/spotify/add-to-queue", {
     method: "POST",
     headers: JSON_HEADERS,
     body: JSON.stringify({ uri }),
@@ -56,7 +57,7 @@ export async function addToQueue(uri) {
 }
 
 export async function getQueue() {
-  const res = await fetch("/spotify/queue");
+  const res = await fetch("/api/v1/spotify/queue");
   if (res.status === 204 || !res.ok) return [];
   return res.json();
 }

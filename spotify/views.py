@@ -1,4 +1,5 @@
 import logging
+from django.db import IntegrityError, transaction
 from django.shortcuts import redirect
 from .credentials import REDIRECT_URI, CLIENT_SECRET, CLIENT_ID
 from rest_framework.views import APIView
@@ -174,21 +175,43 @@ class PlaySong(APIView):
 class SkipSong(APIView):
     def post(self, request, format=None):
         room_code = self.request.session.get('room_code')
-        room = Room.objects.filter(code=room_code).first()
-        if not room:
-            logger.warning(f"SkipSong: Room not found for code {room_code}")
-            return Response({}, status=status.HTTP_404_NOT_FOUND)
+        with transaction.atomic():
+            room = Room.objects.select_for_update().filter(code=room_code).first()
+            if not room:
+                logger.warning(f"SkipSong: Room not found for code {room_code}")
+                return Response({}, status=status.HTTP_404_NOT_FOUND)
 
-        votes = Vote.objects.filter(room=room, song_id=room.current_song)
-        votes_needed = room.votes_to_skip
+            if self.request.session.session_key == room.host:
+                Vote.objects.filter(room=room, song_id=room.current_song).delete()
+                skip_song(room.host)
+                return Response({}, status=status.HTTP_204_NO_CONTENT)
 
-        if self.request.session.session_key == room.host or votes.count() + 1 >= votes_needed:
-            votes.delete()
-            skip_song(room.host)
-        else:
-            vote = Vote(user=self.request.session.session_key,
-                        room=room, song_id=room.current_song)
-            vote.save()
+            if not room.current_song:
+                return Response(
+                    {'error': 'No song is currently playing.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if not self.request.session.exists(self.request.session.session_key):
+                self.request.session.create()
+
+            try:
+                with transaction.atomic():
+                    Vote.objects.create(
+                        user=self.request.session.session_key,
+                        room=room,
+                        song_id=room.current_song,
+                    )
+            except IntegrityError:
+                return Response(
+                    {'detail': 'You have already voted to skip this song.'},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+            votes = Vote.objects.filter(room=room, song_id=room.current_song)
+            if votes.count() >= room.votes_to_skip:
+                votes.delete()
+                skip_song(room.host)
 
         return Response({}, status=status.HTTP_204_NO_CONTENT)
 
