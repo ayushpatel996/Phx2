@@ -6,12 +6,42 @@ import List from "@mui/icons-material/List";
 import LinkedIn from "@mui/icons-material/LinkedIn";
 import Description from "@mui/icons-material/Description";
 import GitHub from "@mui/icons-material/GitHub";
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import RoomJoinPage from "./RoomJoinPage";
 import CreateRoomPage from "./CreateRoomPage";
 import Room from "./Room";
 import { getUserRoom } from "../api/roomApi";
 import { getTopTracks, getTopPlaylists, checkSpotifyAuth, getSpotifyAuthUrl } from "../api/statsApi";
+
+function RoomClosedBanner() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (location.state?.roomClosedMessage) {
+      setMessage(location.state.roomClosedMessage);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
+
+  if (!message) return null;
+
+  return (
+    <div
+      role="alert"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-5 py-3 rounded-2xl bg-red-500/15 border border-red-500/30 backdrop-blur-md text-red-200 text-xs font-bold shadow-2xl"
+    >
+      <span>{message}</span>
+      <button
+        onClick={() => setMessage("")}
+        className="text-red-300/70 hover:text-white uppercase tracking-widest text-[10px] font-black"
+      >
+        Dismiss
+      </button>
+    </div>
+  );
+}
 
 export default function HomePage() {
   const [roomCode, setRoomCode] = useState(null);
@@ -103,6 +133,7 @@ export default function HomePage() {
   const renderHomePage = () => (
     <div className="w-full bg-[#020617]">
       <Navbar />
+      <RoomClosedBanner />
       
       {/* Landing Section */}
       <section id="landing" className="min-h-screen w-full flex flex-col items-center justify-center p-6 relative overflow-hidden">

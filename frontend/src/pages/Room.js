@@ -28,12 +28,31 @@ export default function Room({ leaveRoomCallback }) {
   const [copySnack, setCopySnack] = useState(false);
 
   const intervalRef = useRef(null);
+  const isLeavingRef = useRef(false);
+
+  const stopPolling = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  const handleRoomClosed = async () => {
+    if (isLeavingRef.current) return;
+    isLeavingRef.current = true;
+    stopPolling();
+    await leaveRoom().catch(() => {});
+    leaveRoomCallback();
+    navigate("/", {
+      replace: true,
+      state: { roomClosedMessage: "The host ended the listening session." },
+    });
+  };
 
   const getRoomDetails = async () => {
     const data = await getRoom(roomCode);
     if (!data) {
-      leaveRoomCallback();
-      navigate("/");
+      await handleRoomClosed();
       return;
     }
     setVotesToSkip(data.votes_to_skip);
@@ -54,6 +73,10 @@ export default function Room({ leaveRoomCallback }) {
 
   const fetchCurrentSong = async () => {
     const data = await getCurrentSong();
+    if (data?.roomNotFound) {
+      await handleRoomClosed();
+      return;
+    }
     setSong(data && Object.keys(data).length > 0 ? data : null);
   };
 
@@ -62,14 +85,39 @@ export default function Room({ leaveRoomCallback }) {
     setQueue(data || []);
   };
 
-  useEffect(() => {
-    getRoomDetails();
+  const startPolling = () => {
+    if (intervalRef.current || isLeavingRef.current) return;
     intervalRef.current = setInterval(() => {
       fetchCurrentSong();
       fetchQueue();
     }, 3000);
-    return () => clearInterval(intervalRef.current);
-  }, []);
+  };
+
+  useEffect(() => {
+    getRoomDetails();
+
+    if (!document.hidden) {
+      fetchCurrentSong();
+      fetchQueue();
+      startPolling();
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        fetchCurrentSong();
+        fetchQueue();
+        startPolling();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [roomCode]);
 
   useEffect(() => {
     if (song?.image_url) {
